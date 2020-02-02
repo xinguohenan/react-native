@@ -38,7 +38,7 @@ def dependenciesPath = System.getenv("REACT_NATIVE_DEPENDENCIES")
 def boostPath = dependenciesPath ?: System.getenv("REACT_NATIVE_BOOST_PATH")
 
 // Setup build type for NDK, supported values: {debug, release}
-def nativeBuildType = System.getenv("NATIVE_BUILD_TYPE") ?: "release"
+def nativeBuildType = System.getenv("NATIVE_BUILD_TYPE") ?: "debug"
 
 task createNativeDepsDirectories {
     downloadsDir.mkdirs()
@@ -98,12 +98,12 @@ task prepareFolly(dependsOn: dependenciesPath ? [] : [downloadFolly], type: Copy
 task prepareHermes() {
     def hermesPackagePath = findNodeModulePath(projectDir, "hermes-engine")
     if (!hermesPackagePath) {
-        throw new GradleScriptException("Could not find the hermes-engine npm package")
+        throw new GradleScriptException("Could not find the hermes-engine npm package", null)
     }
 
     def hermesAAR = file("$hermesPackagePath/android/hermes-debug.aar")
     if (!hermesAAR.exists()) {
-        throw new GradleScriptException("The hermes-engine npm package is missing \"android/hermes-debug.aar\"")
+        throw new GradleScriptException("The hermes-engine npm package is missing \"android/hermes-debug.aar\"", null)
     }
 
     def soFiles = zipTree(hermesAAR).matching({ it.include "**/*.so" })
@@ -303,7 +303,7 @@ def buildReactNdkLib = tasks.register("buildReactNdkLib", Exec) {
     inputs.dir("src/main/java/com/facebook/react/modules/blob")
     outputs.dir("$buildDir/react-ndk/all")
     commandLine(getNdkBuildFullPath(),
-            "NDK_DEBUG=" + (nativeBuildType.equalsIgnoreCase("debug") ? "1" : "0"),
+            "NDK_DEBUG=1",
             "NDK_PROJECT_PATH=null",
             "NDK_APPLICATION_MK=$projectDir/src/main/jni/Application.mk",
             "NDK_OUT=" + temporaryDir,
@@ -428,6 +428,8 @@ android {
     packagingOptions {
         exclude("META-INF/NOTICE")
         exclude("META-INF/LICENSE")
+
+        doNotStrip '**.so'
     }
 
     configurations {
